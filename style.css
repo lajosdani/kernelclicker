@@ -4,9 +4,59 @@ body {
     color: limegreen;
     margin: 0;
     padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
 }
 
-pre {
+#game-container {
+    display: flex;
+    gap: 20px;
+}
+
+#terminal {
     white-space: pre-wrap;
     word-wrap: break-word;
+}
+
+#click-area {
+    border: 1px solid limegreen;
+    padding: 10px;
+    cursor: pointer;
+}
+
+#click-area pre {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+#money-flow {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100vh;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.money-sign {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: limegreen;
+    font-size: 16px;
+    animation: flowDown 5s linear;
+}
+
+@keyframes flowDown {
+    from {
+        top: 0;
+    }
+    to {
+        top: 100vh;
+    }
 }
