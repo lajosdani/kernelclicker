@@ -104,4 +104,104 @@ class KernelClicker {
             { name: "Omnipotent Singularity Energy", power: 10000000000000000000000000000, cost: 100000000000000000000000000000 },
             { name: "Infinite Power Source", power: 50000000000000000000000000000, cost: 500000000000000000000000000000 },
             { name: "Absolute Infinity Energy", power: 200000000000000000000000000000, cost: 2000000000000000000000000000000 },
-            {
+            { name: "The Final Power Source", power: 1000000000000000000000000000000, cost: 10000000000000000000000000000000 },
+        ];
+
+        this.init();
+    }
+
+    init() {
+        this.loadGame();
+        this.render();
+        setInterval(() => this.autoIncome(), 1000);
+    }
+
+    click() {
+        this.money += 0.1 * this.computingPower;
+        this.saveGame();
+        this.render();
+    }
+
+    autoIncome() {
+        this.money += 0.1 * this.computingPower * this.energySource * (1 + this.reputation / 100);
+        this.users += (this.computingPower * this.energySource) / 1000;
+        this.reputation = this.users / 100;
+        this.saveGame();
+        this.render();
+    }
+
+    buyUpgrade(type, index) {
+        const upgrade = type === "computing" ? this.computingUpgrades[index] : this.powerUpgrades[index];
+        if (this.money >= upgrade.cost) {
+            this.money -= upgrade.cost;
+            if (type === "computing") {
+                this.computingPower = upgrade.power;
+            } else if (type === "power") {
+                this.energySource = upgrade.power;
+            }
+            this.saveGame();
+            this.render();
+        } else {
+            alert("Not enough money!");
+        }
+    }
+
+    render() {
+        const terminal = document.getElementById("terminal");
+        let output = `Kernel Clicker v1.0\n\n`;
+        output += `Computing Power: ${this.computingPower} kHz (${this.computingUpgrades.find(u => u.power === this.computingPower).name})\n`;
+        output += `Money: $${this.money.toFixed(2)}\n`;
+        output += `Power Source: ${this.energySource} kW (${this.powerUpgrades.find(u => u.power === this.energySource).name})\n`;
+        output += `Reputation: ${this.reputation.toFixed(2)} (Users: ${Math.floor(this.users)})\n\n`;
+
+        output += "Computing Upgrades:\n";
+        this.computingUpgrades.forEach((upgrade, index) => {
+            if (this.money >= upgrade.cost * 0.75) {
+                output += `[${index + 1}] ${upgrade.name} (Power: ${upgrade.power} kHz, Cost: $${upgrade.cost})\n`;
+            } else if (this.money >= upgrade.cost * 0.5) {
+                output += `[${index + 1}] ??? (Cost: $${upgrade.cost})\n`;
+            }
+        });
+
+        output += "\nPower Upgrades:\n";
+        this.powerUpgrades.forEach((upgrade, index) => {
+            if (this.money >= upgrade.cost * 0.75) {
+                output += `[${index + 1}] ${upgrade.name} (Power: ${upgrade.power} kW, Cost: $${upgrade.cost})\n`;
+            } else if (this.money >= upgrade.cost * 0.5) {
+                output += `[${index + 1}] ??? (Cost: $${upgrade.cost})\n`;
+            }
+        });
+
+        terminal.textContent = output;
+    }
+
+    saveGame() {
+        const gameData = {
+            money: this.money,
+            computingPower: this.computingPower,
+            energySource: this.energySource,
+            reputation: this.reputation,
+            users: this.users,
+        };
+        localStorage.setItem("kernelClicker", JSON.stringify(gameData));
+    }
+
+    loadGame() {
+        const gameData = JSON.parse(localStorage.getItem("kernelClicker"));
+        if (gameData) {
+            this.money = gameData.money;
+            this.computingPower = gameData.computingPower;
+            this.energySource = gameData.energySource;
+            this.reputation = gameData.reputation;
+            this.users = gameData.users;
+        }
+    }
+}
+
+// Játék indítása
+const game = new KernelClicker();
+document.addEventListener("keydown", (event) => {
+    if (event.key === "c") {
+        game.click();
+    }
+});
