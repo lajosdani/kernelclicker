@@ -1,11 +1,140 @@
 class KernelClicker {
-    constructor() {
+    constructor(computingUpgrades, powerUpgrades) {
         this.money = 0.0;
         this.computingPower = 1; // kHz
         this.energySource = 1;   // kW
         this.reputation = 0;     // Hírnév
         this.users = 0;          // Felhasználók száma
         this.running = true;
+
+        // Fejlesztési listák
+        this.computingUpgrades = computingUpgrades;
+        this.powerUpgrades = powerUpgrades;
+
+        this.init();
+    }
+
+    init() {
+        this.loadGame();
+        this.render();
+        setInterval(() => this.autoIncome(), 1000);
+
+        // Kattintás gomb eseménykezelő
+        document.getElementById("click-button").onclick = () => this.click();
+
+        // Billentyűzet eseménykezelő (opcionális, ha szeretnéd, hogy a "c" gomb is működjön)
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "c") {
+                this.click();
+            }
+        });
+    }
+
+    click() {
+        this.money += 0.1 * this.computingPower;
+        this.saveGame();
+        this.render();
+        this.showMoneyFlow(1); // 1 $ flow animation
+    }
+
+    autoIncome() {
+        const income = 0.1 * this.computingPower * this.energySource * (1 + this.reputation / 100);
+        this.money += income;
+        this.users += (this.computingPower * this.energySource) / 1000;
+        this.reputation = this.users / 100;
+        this.saveGame();
+        this.render();
+        this.showMoneyFlow(Math.floor(income)); // Income-based $ flow animation
+    }
+
+    buyUpgrade(type, index) {
+        const upgrade = type === "computing" ? this.computingUpgrades[index] : this.powerUpgrades[index];
+        if (this.money >= upgrade.cost) {
+            this.money -= upgrade.cost;
+            if (type === "computing") {
+                this.computingPower = upgrade.power;
+            } else if (type === "power") {
+                this.energySource = upgrade.power;
+            }
+            // Remove the bought upgrade from the list
+            if (type === "computing") {
+                this.computingUpgrades.splice(index, 1);
+            } else {
+                this.powerUpgrades.splice(index, 1);
+            }
+            this.saveGame();
+            this.render();
+        } else {
+            alert("Not enough money!");
+        }
+    }
+
+    render() {
+        const terminal = document.getElementById("terminal");
+        let output = `Kernel Clicker v1.0\n\n`;
+        output += `Computing Power: ${this.computingPower} kHz (${this.computingUpgrades.find(u => u.power === this.computingPower)?.name || "None"})\n`;
+        output += `Money: $${this.money.toFixed(2)}\n`;
+        output += `Power Source: ${this.energySource} kW (${this.powerUpgrades.find(u => u.power === this.energySource)?.name || "None"})\n`;
+        output += `Reputation: ${this.reputation.toFixed(2)} (Users: ${Math.floor(this.users)})\n\n`;
+
+        output += "Computing Upgrades:\n";
+        this.computingUpgrades.forEach((upgrade, index) => {
+            if (this.money >= upgrade.cost * 0.75) {
+                output += `[${index + 1}] ${upgrade.name} (Power: ${upgrade.power} kHz, Cost: $${upgrade.cost})\n`;
+            } else if (this.money >= upgrade.cost * 0.5) {
+                output += `[${index + 1}] ??? (Cost: $${upgrade.cost})\n`;
+            }
+        });
+
+        output += "\nPower Upgrades:\n";
+        this.powerUpgrades.forEach((upgrade, index) => {
+            if (this.money >= upgrade.cost * 0.75) {
+                output += `[${index + 1}] ${upgrade.name} (Power: ${upgrade.power} kW, Cost: $${upgrade.cost})\n`;
+            } else if (this.money >= upgrade.cost * 0.5) {
+                output += `[${index + 1}] ??? (Cost: $${upgrade.cost})\n`;
+            }
+        });
+
+        terminal.textContent = output;
+    }
+
+    showMoneyFlow(amount) {
+        const moneyFlowContainer = document.getElementById("money-flow");
+        for (let i = 0; i < amount; i++) {
+            const moneySign = document.createElement("div");
+            moneySign.className = "money-sign";
+            moneySign.textContent = "$";
+            moneyFlowContainer.appendChild(moneySign);
+
+            // Remove the $ sign after the animation ends
+            setTimeout(() => {
+                moneySign.remove();
+            }, 5000); // Matches the animation duration
+        }
+    }
+
+    saveGame() {
+        const gameData = {
+            money: this.money,
+            computingPower: this.computingPower,
+            energySource: this.energySource,
+            reputation: this.reputation,
+            users: this.users,
+        };
+        localStorage.setItem("kernelClicker", JSON.stringify(gameData));
+    }
+
+    loadGame() {
+        const gameData = JSON.parse(localStorage.getItem("kernelClicker"));
+        if (gameData) {
+            this.money = gameData.money;
+            this.computingPower = gameData.computingPower;
+            this.energySource = gameData.energySource;
+            this.reputation = gameData.reputation;
+            this.users = gameData.users;
+        }
+    }
+}
 
         // Computing Power fejlesztések (50 szint)
         this.computingUpgrades = [
@@ -110,98 +239,16 @@ class KernelClicker {
         this.init();
     }
 
-    init() {
-        this.loadGame();
-        this.render();
-        setInterval(() => this.autoIncome(), 1000);
-    }
-
-    click() {
-        this.money += 0.1 * this.computingPower;
-        this.saveGame();
-        this.render();
-    }
-
-    autoIncome() {
-        this.money += 0.1 * this.computingPower * this.energySource * (1 + this.reputation / 100);
-        this.users += (this.computingPower * this.energySource) / 1000;
-        this.reputation = this.users / 100;
-        this.saveGame();
-        this.render();
-    }
-
-    buyUpgrade(type, index) {
-        const upgrade = type === "computing" ? this.computingUpgrades[index] : this.powerUpgrades[index];
-        if (this.money >= upgrade.cost) {
-            this.money -= upgrade.cost;
-            if (type === "computing") {
-                this.computingPower = upgrade.power;
-            } else if (type === "power") {
-                this.energySource = upgrade.power;
-            }
-            this.saveGame();
-            this.render();
-        } else {
-            alert("Not enough money!");
-        }
-    }
-
-    render() {
-        const terminal = document.getElementById("terminal");
-        let output = `Kernel Clicker v1.0\n\n`;
-        output += `Computing Power: ${this.computingPower} kHz (${this.computingUpgrades.find(u => u.power === this.computingPower).name})\n`;
-        output += `Money: $${this.money.toFixed(2)}\n`;
-        output += `Power Source: ${this.energySource} kW (${this.powerUpgrades.find(u => u.power === this.energySource).name})\n`;
-        output += `Reputation: ${this.reputation.toFixed(2)} (Users: ${Math.floor(this.users)})\n\n`;
-
-        output += "Computing Upgrades:\n";
-        this.computingUpgrades.forEach((upgrade, index) => {
-            if (this.money >= upgrade.cost * 0.75) {
-                output += `[${index + 1}] ${upgrade.name} (Power: ${upgrade.power} kHz, Cost: $${upgrade.cost})\n`;
-            } else if (this.money >= upgrade.cost * 0.5) {
-                output += `[${index + 1}] ??? (Cost: $${upgrade.cost})\n`;
-            }
-        });
-
-        output += "\nPower Upgrades:\n";
-        this.powerUpgrades.forEach((upgrade, index) => {
-            if (this.money >= upgrade.cost * 0.75) {
-                output += `[${index + 1}] ${upgrade.name} (Power: ${upgrade.power} kW, Cost: $${upgrade.cost})\n`;
-            } else if (this.money >= upgrade.cost * 0.5) {
-                output += `[${index + 1}] ??? (Cost: $${upgrade.cost})\n`;
-            }
-        });
-
-        terminal.textContent = output;
-    }
-
-    saveGame() {
-        const gameData = {
-            money: this.money,
-            computingPower: this.computingPower,
-            energySource: this.energySource,
-            reputation: this.reputation,
-            users: this.users,
-        };
-        localStorage.setItem("kernelClicker", JSON.stringify(gameData));
-    }
-
-    loadGame() {
-        const gameData = JSON.parse(localStorage.getItem("kernelClicker"));
-        if (gameData) {
-            this.money = gameData.money;
-            this.computingPower = gameData.computingPower;
-            this.energySource = gameData.energySource;
-            this.reputation = gameData.reputation;
-            this.users = gameData.users;
-        }
-    }
-}
 
 // Játék indítása
-const game = new KernelClicker();
-document.addEventListener("keydown", (event) => {
-    if (event.key === "c") {
-        game.click();
+const game = new KernelClicker(computingUpgrades, powerUpgrades);
+
+// Upgrade vásárlás eseménykezelő
+document.getElementById("terminal").addEventListener("click", (event) => {
+    const target = event.target;
+    if (target.tagName === "SPAN" && target.classList.contains("upgrade")) {
+        const type = target.dataset.type;
+        const index = target.dataset.index;
+        game.buyUpgrade(type, index);
     }
 });
